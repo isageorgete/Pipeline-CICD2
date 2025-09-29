@@ -2,21 +2,57 @@ name: Deploy to Vercel
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]   # ou [ master ], se o repo usar master
+  workflow_dispatch:
+
+# evita dois deploys concorrentes para o mesmo ambiente
+concurrency:
+  group: prod-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    environment: production   # mesmo conceito do .NET, só que aqui pro JS
+    
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Install Vercel CLI
-      run: npm i -g vercel
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'   # ou versão do seu projeto
 
-    - name: Deploy to Vercel
-      run: vercel --token ${{ secrets.VERCEL_TOKEN }} --prod # Se der erro, pode tentar colocar --yes
-      env:
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Install dependencies
+        run: npm install
 
+      - name: Run tests
+        run: npm test   # se não tiver testes, pode comentar essa linha
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Deploy to Vercel
+        run: vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      # --- SLEUTH NOTIFY ---
+      - name: Notify Sleuth
+        if: ${{ success() }}
+        uses: sleuth-io/sleuth-action@main
+        with:
+          organization-slug: isageorgete     # sua org no Sleuth
+          deployment-slug: ${{ github.sha }}
+          api-key: ${{ secrets.SLEUTH_API_KEY }}
+          environment: production
+          sha: ${{ github.sha }}
+          email: isadorageorgete22@gmail.com        # mesmo email cadastrado no Sleuth
+
+
+             
