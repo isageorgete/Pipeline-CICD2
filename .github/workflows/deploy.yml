@@ -48,10 +48,9 @@ jobs:
         uses: sleuth-io/sleuth-action@main
         with:
           organization-slug: isageorgete     # sua org no Sleuth
-          deployment-slug: ${{ github.sha }}
+          deployment-slug: 8ea8874
           api-key: ${{ secrets.SLEUTH_API_KEY }}
           environment: production
-          sha: ${{ github.sha }}
           email: isadorageorgete22@gmail.com        # mesmo email cadastrado no Sleuth
 
 
